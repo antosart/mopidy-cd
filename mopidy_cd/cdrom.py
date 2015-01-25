@@ -12,11 +12,15 @@ class Cdrom(object):
         self.refresh()
     
     def refresh(self):
-        self.disc = discid.read()
+        self.tracks=[]
+        try:
+            self.disc = discid.read()
+        except:
+            logger.debug("Cdrom: Unable to read cd")
+            return
         logger.debug("Cdrom: reading cd")
         self.n = len(self.disc.tracks)
         logger.debug('Cdrom: %d tracks found',self.n)
-        self.tracks=[]
         for track in self.disc.tracks:
             number = track.number
             duration = track.seconds

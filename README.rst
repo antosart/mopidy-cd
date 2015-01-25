@@ -4,7 +4,7 @@ Mopidy-Cd
 
 `Mopidy <http://www.mopidy.com/>`_ extension for playing music from Audio CD
 
-
+This is still a beta version.
 
 
 Installation
@@ -16,6 +16,8 @@ Install by running::
 
 Or, if available, install the Debian/Ubuntu package from `apt.mopidy.com
 <http://apt.mopidy.com/>`_.
+
+Note: You need to add the user mopidy to the cdrom group (adduser mopidy cdrom).
 
 
 Configuration
