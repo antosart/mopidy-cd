@@ -1,0 +1,55 @@
+Metadata-Version: 1.1
+Name: Mopidy-Cd
+Version: 0.1
+Summary: Mopidy Extension to play audio CD
+Home-page: https://github.com/asartori/mopidy-cd
+Author: Antonio Sartori
+Author-email: antonio217@web.de
+License: Apache License, Version 2.0
+Description: *********
+        Mopidy-Cd
+        *********
+        
+        `Mopidy <http://www.mopidy.com/>`_ extension for playing music from Audio CD
+        
+        
+        
+        
+        Installation
+        ============
+        
+        Install by running::
+        
+              sudo pip install Mopidy-Cd
+        
+        Or, if available, install the Debian/Ubuntu package from `apt.mopidy.com
+        <http://apt.mopidy.com/>`_.
+        
+        
+        Configuration
+        =============
+        
+        
+        Project resources
+        =================
+        
+        - `Source code <https://github.com/asartori/mopidy-cd>`_
+        - `Issue tracker <https://github.com/asartori/mopidy-cd/issues>`_
+        - `Development branch tarball <https://github.com/asartori/mopidy-cd/tarball/master#egg=Mopidy-Cd-dev>`_
+        
+        
+        Changelog
+        =========
+        
+        v0.1.0 (2015-01-20)
+        -------------------
+        
+        - Initial release.
+        
+Platform: UNKNOWN
+Classifier: Environment :: No Input/Output (Daemon)
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2
+Classifier: Topic :: Multimedia :: Sound/Audio :: Players
