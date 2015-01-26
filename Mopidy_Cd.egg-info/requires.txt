@@ -1,4 +1,0 @@
-setuptools
-Mopidy >= 0.14
-Pykka >= 1.1
-discid >= 1.1

@@ -1,3 +1,0 @@
-[mopidy.ext]
-cd = mopidy_cd:Extension
-
