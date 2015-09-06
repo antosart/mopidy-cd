@@ -7,6 +7,20 @@ Mopidy-Cd
 This is still a beta version.
 
 
+Dependencies
+============
+
+Mopidy-Cd depends on python-discid; on debian/ubuntu::
+
+      sudo apt-get install python-libdiscid
+
+If python-musicbrainzngs is available, Mopidy-Cd will also show track
+titles instead of just track numbers.  On debian/ubuntu install
+python-musicbrainzngs via::
+
+      sudo apt-get install python-musicbrainzngs
+
+
 Installation
 ============
 
