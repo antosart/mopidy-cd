@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class CdBackend(pykka.ThreadingActor, backend.Backend):
-    uri_schemes = ['cd','cdda']
+    uri_schemes = ['cd']
 
     def __init__(self, config, audio):
         super(CdBackend, self).__init__()
@@ -42,7 +42,7 @@ class CdLibrary(backend.LibraryProvider):
         i=int(uri.lstrip("cd:/"))
         logger.debug('Cdrom: track %s selected',i)
         (number,name,duration) = self.backend.cdrom.tracks[i]
-        return [Track(uri='cdda://%d' % number,
+        return [Track(uri=uri,
                       name=name,
                       length=int(duration)*1000)]
         
@@ -51,3 +51,6 @@ class CdPlaybackProvider(backend.PlaybackProvider):
     def change_track(self, track):
         logger.debug('Cdrom: playing track %s', track)
         return super(CdPlaybackProvider, self).change_track(track)
+
+    def translate_uri(self, uri):
+        return uri.replace('cd:/','cdda://')
