@@ -5,7 +5,6 @@ import os
 
 import pygst
 pygst.require('0.10')
-import gst
 import gobject
 
 from mopidy import config, exceptions, ext
