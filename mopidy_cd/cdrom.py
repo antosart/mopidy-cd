@@ -34,12 +34,13 @@ class Cdrom(object):
             except musicbrainzngs.ResponseError:
                 logger.debug("Disc not found on Musicbrainz")
             else:
-                mbtracks = result["disc"]["release-list"][0]["medium-list"][0]["track-list"]
+                # mbtracks = result["disc"]["release-list"][0]["medium-list"][0]["track-list"]
+                mbtracks = result["cdstub"]["track-list"]
                 if len(mbtracks) == len(self.disc.tracks):
                     for mbtrack, track in zip(mbtracks,self.disc.tracks):
                         number = track.number
                         duration = track.seconds
-                        name = '%s - %s (%s)' % (number, mbtrack["recording"]["title"], time.strftime('%H:%M:%S', time.gmtime (duration)))
+                        name = '%s - %s (%s)' % (number, mbtrack["title"], time.strftime('%H:%M:%S', time.gmtime (duration)))
                         self.tracks.append((number,name,duration))
                     return
         for track in self.disc.tracks:
