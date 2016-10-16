@@ -30,7 +30,7 @@ class CdLibrary(backend.LibraryProvider):
         logger.debug('Cdrom backend %s',self.backend)
         tracks = self.backend.cdrom.tracks
         logger.debug('Cdrom: in browse found %d tracks',len(tracks))
-        for (seq,(number,name,duration)) in enumerate(tracks):
+        for (seq,(number,name,duration)) in enumerate(tracks,1):
             results.append(Ref.track(uri='cd:/'+str(seq), name=name))
         return results
 
@@ -39,7 +39,7 @@ class CdLibrary(backend.LibraryProvider):
 
     def lookup(self, uri):
         logger.debug('Cdrom: track selected')
-        i=int(uri.lstrip("cd:/"))
+        i=int(uri.lstrip("cd:/"))-1
         logger.debug('Cdrom: track %s selected',i)
         (number,name,duration) = self.backend.cdrom.tracks[i]
         return [Track(uri=uri,
