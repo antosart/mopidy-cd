@@ -1,7 +1,7 @@
 import pykka
 
 from mopidy import backend
-from mopidy.models import Ref, Track
+from mopidy.models import Ref, Track, Album
 from . import cdrom
 import logging
 
@@ -30,7 +30,7 @@ class CdLibrary(backend.LibraryProvider):
         logger.debug('Cdrom backend %s',self.backend)
         tracks = self.backend.cdrom.tracks
         logger.debug('Cdrom: in browse found %d tracks',len(tracks))
-        for (seq,(number,name,duration)) in enumerate(tracks,1):
+        for (seq,(number,name,duration,albumtitle,genre,year)) in enumerate(tracks,1):
             results.append(Ref.track(uri='cd:/'+str(seq), name=name))
         return results
 
@@ -41,10 +41,14 @@ class CdLibrary(backend.LibraryProvider):
         logger.debug('Cdrom: track selected')
         i=int(uri.lstrip("cd:/"))-1
         logger.debug('Cdrom: track %s selected',i)
-        (number,name,duration) = self.backend.cdrom.tracks[i]
+        (number,name,duration,albumtitle,genre,year) = self.backend.cdrom.tracks[i]
+        album = Album(name = albumtitle)
         return [Track(uri=uri,
                       name=name,
-                      length=int(duration)*1000)]
+                      length=int(duration)*1000,
+                      genre=genre,
+                      date=year,
+                      album=album)]
         
 class CdPlaybackProvider(backend.PlaybackProvider):
     
