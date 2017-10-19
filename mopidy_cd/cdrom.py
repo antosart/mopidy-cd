@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import logging
 import time
 import discid
+
+logger = logging.getLogger(__name__)
 try:
     import CDDB
 except ImportError:
@@ -18,9 +20,6 @@ try:
     musicbrainz = True
 except:
     musicbrainz = False
-    
-logger = logging.getLogger(__name__)
-
 
 class Cdrom(object):
 
