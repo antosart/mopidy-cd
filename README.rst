@@ -14,11 +14,11 @@ Mopidy-Cd depends on python-discid; on debian/ubuntu::
 
       sudo apt-get install python-libdiscid
 
-If python-musicbrainzngs is available, Mopidy-Cd will also show track
+If python-cddb is available, Mopidy-Cd will also show track
 titles instead of just track numbers.  On debian/ubuntu install
-python-musicbrainzngs via::
+python-cddb via::
 
-      sudo apt-get install python-musicbrainzngs
+      sudo apt-get install python-cddb
 
 
 Installation
