@@ -45,7 +45,10 @@ class CdLibrary(backend.LibraryProvider):
         return [Track(uri=uri,
                       name=name,
                       length=int(duration)*1000)]
-        
+
+    def search(self, query=None, uris=None, exact=False):
+         return
+
 class CdPlaybackProvider(backend.PlaybackProvider):
     
     def change_track(self, track):
