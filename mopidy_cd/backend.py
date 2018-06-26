@@ -1,65 +1,81 @@
+from __future__ import unicode_literals
+
+import logging
+
 import pykka
 
 from mopidy import backend
-from mopidy.models import Ref, Track, Album
-from . import cdrom
-import logging
+from mopidy.models import Album, Artist, Image, Ref, Track
+
+from cdrom import CdRom
+
 
 logger = logging.getLogger(__name__)
 
+URI_PREFIX = 'cd:/'
+
 
 class CdBackend(pykka.ThreadingActor, backend.Backend):
+
     uri_schemes = ['cd']
 
     def __init__(self, config, audio):
         super(CdBackend, self).__init__()
-        self.audio = audio
-        self.cdrom = cdrom.Cdrom()
-
+        self.cdrom = CdRom()
         self.library = CdLibrary(backend=self)
-        self.playback = CdPlaybackProvider(audio=audio, backend=self)
+        self.playback = CdPlayback(audio=audio, backend=self)
 
 
 class CdLibrary(backend.LibraryProvider):
-    root_directory = Ref.directory(uri='cd:root', name='Cd')
+
+    root_directory = Ref.directory(uri=URI_PREFIX + 'root', name='CD')
 
     def browse(self, uri):
-        self.refresh()
-        results = []
-        if not uri == 'cd:root':
-            return results
-        logger.debug('Cdrom backend %s', self.backend)
-        tracks = self.backend.cdrom.tracks
-        logger.debug('Cdrom: in browse found %d tracks', len(tracks))
-        for (seq, (number, name, duration, albumtitle, genre, year)) in enumerate(tracks, 1):
-            results.append(Ref.track(uri='cd:/' + str(seq), name=name))
-        return results
+        def make_track_ref(track):
+            return Ref.track(
+                uri=URI_PREFIX + str(track.number), name=track.title
+            )
 
-    def refresh(self, uri=None):
-        self.backend.cdrom.refresh()
+        self.refresh()
+
+        return map(make_track_ref, self.backend.cdrom.disc.tracks)
 
     def lookup(self, uri):
-        logger.debug('Cdrom: track selected')
-        i = int(uri.lstrip("cd:/")) - 1
-        logger.debug('Cdrom: track %s selected', i)
-        (number, name, duration, albumtitle,
-         genre, year) = self.backend.cdrom.tracks[i]
-        album = Album(name=albumtitle)
-        return [Track(uri=uri,
-                      name=name,
-                      length=int(duration) * 1000,
-                      genre=genre,
-                      date=year,
-                      album=album)]
+        def make_artist(artist_tuple):
+            return Artist(
+                musicbrainz_id=artist_tuple.id,
+                name=artist_tuple.name,
+                sortname=artist_tuple.sortname
+            )
 
-    def search(self, query=None, uris=None, exact=False):
-        return
+        track_number = int(uri.lstrip(URI_PREFIX))
+        logger.debug('CD track #%d selected', track_number)
 
-class CdPlaybackProvider(backend.PlaybackProvider):
+        disc = self.backend.cdrom.disc
+        track = disc.tracks[track_number - 1]
+        return [
+            Track(
+                uri=uri, musicbrainz_id=track.id,
+                name=track.title, length=track.duration,
+                track_no=track.number, disc_no=track.disc_number,
+                artists={make_artist(artist) for artist in track.artists},
+                album=Album(
+                    musicbrainz_id=disc.id, name=disc.title, date=disc.year,
+                    num_discs=disc.discs, num_tracks=len(disc.tracks),
+                    artists={make_artist(artist) for artist in disc.artists}
+                )
+            )
+        ]
 
-    def change_track(self, track):
-        logger.debug('Cdrom: playing track %s', track)
-        return super(CdPlaybackProvider, self).change_track(track)
+    def get_images(self, uris):
+        images = {Image(uri=img) for img in self.backend.cdrom.disc.images}
+        return {uri: images for uri in uris}
+
+    def refresh(self, uri=None):
+        self.backend.cdrom.read()
+
+
+class CdPlayback(backend.PlaybackProvider):
 
     def translate_uri(self, uri):
-        return uri.replace('cd:/', 'cdda://')
+        return uri.replace(URI_PREFIX, 'cdda://')
