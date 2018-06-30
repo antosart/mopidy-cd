@@ -63,16 +63,16 @@ def _extract_tracks(discid, medium_list=()):
     def make_track_discid(track):
         return Track(
             id=None,
-            number=track.number,
-            disc_number=1,
             title='CD Track %d (%s)' % (
                 track.number, timedelta(seconds=track.seconds)
             ),
+            number=track.number,
+            disc_number=1,
             duration=track.seconds * 1000,
             artists=()
         )
 
-    cd = next(ifilter(match_by_discid, medium_list))
+    cd = next(ifilter(match_by_discid, medium_list), None)
     if cd:
         disc_number = int(cd['position'])
         return [make_track_mbrainz(disc_number, tr) for tr in cd['track-list']]
@@ -94,7 +94,7 @@ class CdRom(object):
         try:
             disc_id = discid.read()
             logger.debug(
-                'Read disc: MusicBrainz ID %s, FreeDB ID %s, num of tracks %d',
+                'Read disc: MusicBrainz DiscID %s, FreeDB ID %s, %d tracks',
                 disc_id.id,
                 disc_id.freedb_id,
                 len(disc_id.tracks)
@@ -135,7 +135,7 @@ class CdRom(object):
                 artists=_extract_artists(release['artist-credit']),
                 tracks=_extract_tracks(disc_id, release['medium-list'])
             )
-        except musicbrainzngs.WebServiceError as e:
+        except (LookupError, musicbrainzngs.WebServiceError) as e:
             logger.info('Error accessing MusicBrainz: %s', e)
             self.disc = UNKNOWN_DISC._replace(
                 discid=disc_id.id,
