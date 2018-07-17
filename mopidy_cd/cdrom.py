@@ -21,65 +21,6 @@ Disc = namedtuple('Disc', 'id discid title year discs artists images tracks')
 UNKNOWN_DISC = Disc(None, None, 'Unknown CD', '', 1, (), (), ())
 
 
-def _extract_artists(artist_credits):
-    def make_artist(artist_dict):
-        artist = artist_dict['artist']
-        return Artist(
-            id=artist['id'],
-            name=artist['name'],
-            sortname=artist['sort-name']
-        )
-
-    artist_dicts = ifilter(
-        lambda credit: isinstance(credit, Mapping), artist_credits
-    )
-    return set(imap(make_artist, artist_dicts))
-
-
-def _extract_images(images_list):
-    front_back_images = ifilter(
-        lambda image: image['front'] or image['back'], images_list
-    )
-    return set(imap(lambda image: image['image'], front_back_images))
-
-
-def _extract_tracks(discid, medium_list=()):
-    def match_by_discid(medium):
-        if medium['format'].lower() != 'cd':
-            return False
-        return any(disc['id'] == discid.id for disc in medium['disc-list'])
-
-    def make_track_mbrainz(disc_number, track):
-        recording = track['recording']
-        return Track(
-            id=track['id'],
-            title=recording['title'],
-            number=int(track['number']),
-            disc_number=disc_number,
-            duration=int(track['length']),
-            artists=_extract_artists(recording['artist-credit'])
-        )
-
-    def make_track_discid(track):
-        return Track(
-            id=None,
-            title='CD Track %d (%s)' % (
-                track.number, timedelta(seconds=track.seconds)
-            ),
-            number=track.number,
-            disc_number=1,
-            duration=track.seconds * 1000,
-            artists=()
-        )
-
-    cd = next(ifilter(match_by_discid, medium_list), None)
-    if cd:
-        disc_number = int(cd['position'])
-        return [make_track_mbrainz(disc_number, tr) for tr in cd['track-list']]
-    else:
-        return [make_track_discid(track) for track in discid.tracks]
-
-
 class CdRom(object):
 
     disc = UNKNOWN_DISC
@@ -131,13 +72,76 @@ class CdRom(object):
                 title=release['title'],
                 discs=release['medium-count'],
                 year=release['date'],
-                images=_extract_images(images['images']),
-                artists=_extract_artists(release['artist-credit']),
-                tracks=_extract_tracks(disc_id, release['medium-list'])
+                images=CdRom._extract_images(images['images']),
+                artists=CdRom._extract_artists(release['artist-credit']),
+                tracks=CdRom._extract_tracks(disc_id, release['medium-list'])
             )
         except (LookupError, musicbrainzngs.WebServiceError) as e:
             logger.info('Error accessing MusicBrainz: %s', e)
             self.disc = UNKNOWN_DISC._replace(
                 discid=disc_id.id,
-                tracks=_extract_tracks(disc_id)
+                tracks=CdRom._extract_tracks(disc_id)
             )
+
+    @staticmethod
+    def _extract_artists(artist_credits):
+        artist_dicts = ifilter(
+            lambda credit: isinstance(credit, Mapping), artist_credits
+        )
+        return set(imap(CdRom._make_artist, artist_dicts))
+
+    @staticmethod
+    def _extract_images(images_list):
+        front_back_images = ifilter(
+            lambda image: image['front'] or image['back'], images_list
+        )
+        return set(imap(lambda image: image['image'], front_back_images))
+
+    @staticmethod
+    def _extract_tracks(discid, medium_list=()):
+        def match_by_discid(medium):
+            if medium['format'].lower() != 'cd':
+                return False
+            return any(disc['id'] == discid.id for disc in medium['disc-list'])
+
+        cd = next(ifilter(match_by_discid, medium_list), None)
+        if cd:
+            disc_num = int(cd['position'])
+            tracks = cd['track-list']
+            return [CdRom._make_track_mbrainz(disc_num, tr) for tr in tracks]
+        else:
+            return [CdRom._make_track_discid(track) for track in discid.tracks]
+
+    @staticmethod
+    def _make_artist(artist_dict):
+        artist = artist_dict['artist']
+        return Artist(
+            id=artist['id'],
+            name=artist['name'],
+            sortname=artist['sort-name']
+        )
+
+    @staticmethod
+    def _make_track_mbrainz(disc_number, track):
+        recording = track['recording']
+        return Track(
+            id=track['id'],
+            title=recording['title'],
+            number=int(track['number']),
+            disc_number=disc_number,
+            duration=int(track['length']),
+            artists=CdRom._extract_artists(recording['artist-credit'])
+        )
+
+    @staticmethod
+    def _make_track_discid(track):
+        return Track(
+            id=None,
+            title='CD Track %d (%s)' % (
+                track.number, timedelta(seconds=track.seconds)
+            ),
+            number=track.number,
+            disc_number=1,
+            duration=track.seconds * 1000,
+            artists=()
+        )

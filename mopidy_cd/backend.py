@@ -31,23 +31,11 @@ class CdLibrary(backend.LibraryProvider):
     root_directory = Ref.directory(uri=URI_PREFIX + 'root', name='CD')
 
     def browse(self, uri):
-        def make_track_ref(track):
-            return Ref.track(
-                uri=URI_PREFIX + str(track.number), name=track.title
-            )
-
         self.refresh()
 
-        return map(make_track_ref, self.backend.cdrom.disc.tracks)
+        return map(CdLibrary._make_track_ref, self.backend.cdrom.disc.tracks)
 
     def lookup(self, uri):
-        def make_artist(artist_tuple):
-            return Artist(
-                musicbrainz_id=artist_tuple.id,
-                name=artist_tuple.name,
-                sortname=artist_tuple.sortname
-            )
-
         track_number = int(uri.lstrip(URI_PREFIX))
         logger.debug('CD track #%d selected', track_number)
 
@@ -58,11 +46,11 @@ class CdLibrary(backend.LibraryProvider):
                 uri=uri, musicbrainz_id=track.id,
                 name=track.title, length=track.duration,
                 track_no=track.number, disc_no=track.disc_number,
-                artists={make_artist(artist) for artist in track.artists},
+                artists={CdLibrary._make_artist(ar) for ar in track.artists},
                 album=Album(
                     musicbrainz_id=disc.id, name=disc.title, date=disc.year,
                     num_discs=disc.discs, num_tracks=len(disc.tracks),
-                    artists={make_artist(artist) for artist in disc.artists}
+                    artists={CdLibrary._make_artist(ar) for ar in disc.artists}
                 )
             )
         ]
@@ -73,6 +61,18 @@ class CdLibrary(backend.LibraryProvider):
 
     def refresh(self, uri=None):
         self.backend.cdrom.read()
+
+    @staticmethod
+    def _make_track_ref(track):
+        return Ref.track(uri=URI_PREFIX + str(track.number), name=track.title)
+
+    @staticmethod
+    def _make_artist(artist_tuple):
+        return Artist(
+            musicbrainz_id=artist_tuple.id,
+            name=artist_tuple.name,
+            sortname=artist_tuple.sortname
+        )
 
 
 class CdPlayback(backend.PlaybackProvider):
