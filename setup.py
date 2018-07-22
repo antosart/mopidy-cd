@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 
 import re
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 
 def get_version(filename):
@@ -13,11 +14,11 @@ def get_version(filename):
 setup(
     name='Mopidy-Cd',
     version=get_version('mopidy_cd/__init__.py'),
-    url='https://github.com/asartori/mopidy-cd',
+    url='https://github.com/forscher21/mopidy-cd',
     license='Apache License, Version 2.0',
     author='Antonio Sartori',
     author_email='antonio217@web.de',
-    description='Mopidy Extension to play audio CD',
+    description='Mopidy extension to play audio CDs',
     long_description=open('README.rst').read(),
     packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=False,
@@ -27,11 +28,7 @@ setup(
         'Mopidy >= 0.14',
         'Pykka >= 1.1',
         'discid >= 1.1',
-    ],
-    test_suite='nose.collector',
-    tests_require=[
-        'nose',
-        'mock >= 1.0',
+        'musicbrainzngs >= 0.6',
     ],
     entry_points={
         'mopidy.ext': [
@@ -47,5 +44,3 @@ setup(
         'Topic :: Multimedia :: Sound/Audio :: Players',
     ],
 )
-
-
