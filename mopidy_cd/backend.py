@@ -33,7 +33,10 @@ class CdLibrary(backend.LibraryProvider):
     def browse(self, uri):
         self.refresh()
 
-        return map(CdLibrary._make_track_ref, self.backend.cdrom.disc.tracks)
+        return [
+            Ref.track(uri=URI_PREFIX + str(track.number), name=track.title)
+            for track in self.backend.cdrom.disc.tracks
+        ]
 
     def lookup(self, uri):
         track_number = int(uri.lstrip(URI_PREFIX))
@@ -61,10 +64,6 @@ class CdLibrary(backend.LibraryProvider):
 
     def refresh(self, uri=None):
         self.backend.cdrom.read()
-
-    @staticmethod
-    def _make_track_ref(track):
-        return Ref.track(uri=URI_PREFIX + str(track.number), name=track.title)
 
     @staticmethod
     def _make_artist(artist_tuple):
