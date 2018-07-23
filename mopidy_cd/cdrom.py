@@ -7,7 +7,6 @@ import musicbrainzngs
 
 from collections import Mapping, namedtuple
 from datetime import timedelta
-from itertools import ifilter, imap
 
 from . import Extension
 
@@ -85,17 +84,19 @@ class CdRom(object):
 
     @staticmethod
     def _extract_artists(artist_credits):
-        artist_dicts = ifilter(
-            lambda credit: isinstance(credit, Mapping), artist_credits
-        )
-        return set(imap(CdRom._make_artist, artist_dicts))
+        return {
+            CdRom._make_artist(credit)
+            for credit in artist_credits
+            if isinstance(credit, Mapping)
+        }
 
     @staticmethod
     def _extract_images(images_list):
-        front_back_images = ifilter(
-            lambda image: image['front'] or image['back'], images_list
-        )
-        return set(imap(lambda image: image['image'], front_back_images))
+        return {
+            image['image']
+            for image in images_list
+            if image['front'] or image['back']
+        }
 
     @staticmethod
     def _extract_tracks(discid, medium_list=()):
@@ -104,7 +105,10 @@ class CdRom(object):
                 return False
             return any(disc['id'] == discid.id for disc in medium['disc-list'])
 
-        cd = next(ifilter(match_by_discid, medium_list), None)
+        cd = next(
+            (medium for medium in medium_list if match_by_discid(medium)),
+            None
+        )
         if cd:
             disc_num = int(cd['position'])
             tracks = cd['track-list']
