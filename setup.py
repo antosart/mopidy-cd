@@ -25,10 +25,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'setuptools',
-        'Mopidy >= 0.14',
+        'Mopidy >= 1.0',
         'Pykka >= 1.1',
-        'discid >= 1.1',
-        'musicbrainzngs >= 0.6',
+        'musicbrainzngs == 0.6',
     ],
     entry_points={
         'mopidy.ext': [

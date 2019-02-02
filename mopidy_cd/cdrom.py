@@ -1,12 +1,15 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import logging
+import math
 
-import discid
 import musicbrainzngs
 
 from collections import Mapping, namedtuple
 from datetime import timedelta
+
+from mopidy.audio.scan import Scanner
+from mopidy.exceptions import ScannerError
 
 from . import Extension
 
@@ -17,7 +20,36 @@ Artist = namedtuple('Artist', 'id name sortname')
 Track = namedtuple('Track', 'id title number disc_number duration artists')
 Disc = namedtuple('Disc', 'id discid title year discs artists images tracks')
 
+CD_PROTOCOL = 'cdda://'
 UNKNOWN_DISC = Disc(None, None, 'Unknown CD', '', 1, (), (), ())
+
+
+class DiscID(object):
+
+    id = None
+    toc = ''
+    tracks = ()
+
+    def __init__(self):
+        try:
+            tags = Scanner().scan(uri=CD_PROTOCOL).tags
+            toc = [
+                int(i, 16) for i in tags['musicbrainz-discid-full'][0].split()
+            ]
+            offsets = toc[3:] + toc[2:3]
+
+            self.id = tags['musicbrainz-discid'][0]
+            self.toc = ' '.join(str(i) for i in toc)
+            self.tracks = [
+                (i + 1, DiscID._to_seconds(offsets[i + 1] - offsets[i]))
+                for i in range(len(offsets) - 1)
+            ]
+        except (LookupError, ScannerError) as e:
+            logger.info('Error identifying disc: %s', e)
+
+    @staticmethod
+    def _to_seconds(sectors):
+        return int(math.floor(sectors / 75.0 + 0.5))
 
 
 class CdRom(object):
@@ -31,27 +63,24 @@ class CdRom(object):
         )
 
     def read(self):
-        try:
-            disc_id = discid.read()
+        discid = DiscID()
+        if discid.id:
             logger.debug(
-                'Read disc: MusicBrainz DiscID %s, FreeDB ID %s, %d tracks',
-                disc_id.id,
-                disc_id.freedb_id,
-                len(disc_id.tracks)
+                'Read disc: MusicBrainz DiscID %s, %d tracks',
+                discid.id, len(discid.tracks)
             )
-        except (discid.DiscError, NotImplementedError) as e:
-            logger.info('Error identifying disc: %s', e)
+        else:
             self.disc = UNKNOWN_DISC
             return
 
         # use cached disc info if possible
-        if self.disc.discid == disc_id.id:
+        if self.disc.discid == discid.id:
             return
 
         try:
             mbrainz_info = musicbrainzngs.get_releases_by_discid(
-                id=disc_id.id,
-                toc=disc_id.toc_string,
+                id=discid.id,
+                toc=discid.toc,
                 includes=['artist-credits', 'recordings'],
                 cdstubs=False
             )
@@ -67,19 +96,19 @@ class CdRom(object):
 
             self.disc = Disc(
                 id=release['id'],
-                discid=disc_id.id,
+                discid=discid.id,
                 title=release['title'],
                 discs=release['medium-count'],
                 year=release['date'],
                 images=CdRom._extract_images(images['images']),
                 artists=CdRom._extract_artists(release['artist-credit']),
-                tracks=CdRom._extract_tracks(disc_id, release['medium-list'])
+                tracks=CdRom._extract_tracks(discid, release['medium-list'])
             )
         except (LookupError, musicbrainzngs.WebServiceError) as e:
             logger.info('Error accessing MusicBrainz: %s', e)
             self.disc = UNKNOWN_DISC._replace(
-                discid=disc_id.id,
-                tracks=CdRom._extract_tracks(disc_id)
+                discid=discid.id,
+                tracks=CdRom._extract_tracks(discid)
             )
 
     @staticmethod
@@ -141,11 +170,9 @@ class CdRom(object):
     def _make_track_discid(track):
         return Track(
             id=None,
-            title='CD Track %d (%s)' % (
-                track.number, timedelta(seconds=track.seconds)
-            ),
-            number=track.number,
+            title='CD Track %d (%s)' % (track[0], timedelta(seconds=track[1])),
+            number=track[0],
             disc_number=1,
-            duration=track.seconds * 1000,
+            duration=track[1] * 1000,
             artists=()
         )
