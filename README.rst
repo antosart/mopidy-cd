@@ -47,6 +47,7 @@ v0.5.0 (2019-02-01)
 -------------------
 
 - Remove dependency on libdiscid.
+- Add search support.
 
 
 v0.4.0 (2018-06-26)

@@ -24,6 +24,9 @@ CD_PROTOCOL = 'cdda://'
 UNKNOWN_DISC = Disc(None, None, 'Unknown CD', '', 1, (), (), ())
 
 
+musicbrainzngs.set_useragent(Extension.dist_name, Extension.version)
+
+
 class DiscID(object):
 
     id = None
@@ -32,6 +35,7 @@ class DiscID(object):
 
     def __init__(self):
         try:
+            # see GstAudioCdSrc docs for emitted tags
             tags = Scanner().scan(uri=CD_PROTOCOL).tags
             toc = [
                 int(i, 16) for i in tags['musicbrainz-discid-full'][0].split()
@@ -55,12 +59,6 @@ class DiscID(object):
 class CdRom(object):
 
     disc = UNKNOWN_DISC
-
-    def __init__(self):
-        musicbrainzngs.set_useragent(
-            Extension.dist_name,
-            Extension.version
-        )
 
     def read(self):
         discid = DiscID()
