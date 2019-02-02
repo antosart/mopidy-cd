@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import logging
 
@@ -7,42 +7,43 @@ import pykka
 from mopidy import backend
 from mopidy.models import Album, Artist, Image, Ref, Track
 
-from cdrom import CdRom
+from . import Extension
+from .cdrom import CdRom, CD_PROTOCOL
 
 
 logger = logging.getLogger(__name__)
 
-URI_PREFIX = 'cd:/'
+ROOT_URI = 'cd:/'
 
 
 class CdBackend(pykka.ThreadingActor, backend.Backend):
 
-    uri_schemes = ['cd']
+    uri_schemes = [Extension.ext_name]
 
     def __init__(self, config, audio):
         super(CdBackend, self).__init__()
-        self.cdrom = CdRom()
         self.library = CdLibrary(backend=self)
         self.playback = CdPlayback(audio=audio, backend=self)
 
 
 class CdLibrary(backend.LibraryProvider):
 
-    root_directory = Ref.directory(uri=URI_PREFIX + 'root', name='CD')
+    root_directory = Ref.directory(uri=ROOT_URI, name='CD')
+    cdrom = CdRom()
 
     def browse(self, uri):
         self.refresh()
 
         return [
-            Ref.track(uri=URI_PREFIX + str(track.number), name=track.title)
-            for track in self.backend.cdrom.disc.tracks
+            Ref.track(uri=ROOT_URI + str(track.number), name=track.title)
+            for track in self.cdrom.disc.tracks
         ]
 
     def lookup(self, uri):
-        track_number = int(uri.lstrip(URI_PREFIX))
+        track_number = int(uri.lstrip(ROOT_URI))
         logger.debug('CD track #%d selected', track_number)
 
-        disc = self.backend.cdrom.disc
+        disc = self.cdrom.disc
         track = disc.tracks[track_number - 1]
         return [
             Track(
@@ -59,11 +60,11 @@ class CdLibrary(backend.LibraryProvider):
         ]
 
     def get_images(self, uris):
-        images = {Image(uri=img) for img in self.backend.cdrom.disc.images}
+        images = {Image(uri=img) for img in self.cdrom.disc.images}
         return {uri: images for uri in uris}
 
     def refresh(self, uri=None):
-        self.backend.cdrom.read()
+        self.cdrom.read()
 
     @staticmethod
     def _make_artist(artist_tuple):
@@ -77,4 +78,4 @@ class CdLibrary(backend.LibraryProvider):
 class CdPlayback(backend.PlaybackProvider):
 
     def translate_uri(self, uri):
-        return uri.replace(URI_PREFIX, 'cdda://')
+        return uri.replace(ROOT_URI, CD_PROTOCOL)

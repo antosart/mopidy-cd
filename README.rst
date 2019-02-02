@@ -4,16 +4,6 @@ Mopidy-Cd
 
 `Mopidy <http://www.mopidy.com/>`_ extension for playing music from Audio CD.
 
-This is still a beta version.
-
-
-Dependencies
-============
-
-Mopidy-Cd depends on ``libdiscid``, on Debian/Ubuntu install by running::
-
-      sudo apt install libdiscid0
-
 
 Installation
 ============
@@ -53,11 +43,18 @@ Known issues
 Changelog
 =========
 
+v0.5.0 (2019-02-01)
+-------------------
+
+- Remove dependency on libdiscid.
+
+
 v0.4.0 (2018-06-26)
 -------------------
 
 - Use MusicBrainz for CD disk look up and cache responses.
 - Refactoring.
+
 
 v0.1.0 (2015-01-20)
 -------------------
