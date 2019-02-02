@@ -5,10 +5,10 @@ import logging
 import pykka
 
 from mopidy import backend
-from mopidy.models import Album, Artist, Image, Ref, Track
+from mopidy.models import Album, Artist, Image, Ref, SearchResult, Track
 
 from . import Extension
-from .cdrom import CdRom, CD_PROTOCOL
+from .cdrom import CD_PROTOCOL, UNKNOWN_DISC, CdRom
 
 
 logger = logging.getLogger(__name__)
@@ -40,24 +40,22 @@ class CdLibrary(backend.LibraryProvider):
         ]
 
     def lookup(self, uri):
-        track_number = int(uri.lstrip(ROOT_URI))
-        logger.debug('CD track #%d selected', track_number)
-
         disc = self.cdrom.disc
-        track = disc.tracks[track_number - 1]
-        return [
-            Track(
-                uri=uri, musicbrainz_id=track.id,
-                name=track.title, length=track.duration,
-                track_no=track.number, disc_no=track.disc_number,
-                artists={CdLibrary._make_artist(ar) for ar in track.artists},
-                album=Album(
-                    musicbrainz_id=disc.id, name=disc.title, date=disc.year,
-                    num_discs=disc.discs, num_tracks=len(disc.tracks),
-                    artists={CdLibrary._make_artist(ar) for ar in disc.artists}
-                )
-            )
-        ]
+        album = CdLibrary._make_album(disc)
+        track_path = uri.lstrip(ROOT_URI)
+        if track_path:
+            try:
+                track_number = int(track_path)
+            except ValueError as e:
+                logger.warning('Invalid uri %s: %s', uri, e)
+                return []
+            else:
+                logger.debug('CD track #%d selected', track_number)
+                track = disc.tracks[track_number - 1]
+                return [self._make_track(album, track)]
+        else:
+            logger.debug('All CD tracks selected')
+            return [self._make_track(album, track) for track in disc.tracks]
 
     def get_images(self, uris):
         images = {Image(uri=img) for img in self.cdrom.disc.images}
@@ -66,12 +64,84 @@ class CdLibrary(backend.LibraryProvider):
     def refresh(self, uri=None):
         self.cdrom.read()
 
+    def search(self, query=None, uris=None, exact=False):
+        def match(subvalue, value):
+            if exact:
+                return subvalue == value
+            else:
+                return subvalue.lower() in value.lower()
+
+        if uris and all(uri not in ROOT_URI for uri in uris):
+            return None
+
+        self.refresh()
+
+        disc = self.cdrom.disc
+        if disc == UNKNOWN_DISC:
+            return None
+
+        any_query = query.get('any')
+        album_query = query.get('album') or any_query or ()
+        artist_query = query.get('artist') or any_query or ()
+        track_name_query = query.get('track_name') or any_query or ()
+
+        disc_album = CdLibrary._make_album(disc)
+        return SearchResult(
+            albums=[disc_album] if any(
+                match(album, disc_album.name)
+                for album in album_query
+            ) else (),
+            artists=[
+                disc_artist
+                for disc_artist in disc_album.artists
+                if any(
+                    match(artist, disc_artist.name)
+                    for artist in artist_query
+                )
+            ],
+            tracks=[
+                CdLibrary._make_track(disc_album, track)
+                for track in disc.tracks
+                if any(
+                    match(track_name, track.title)
+                    for track_name in track_name_query
+                )
+            ]
+        )
+
+    @staticmethod
+    def _make_album(disc):
+        return Album(
+            uri=ROOT_URI,
+            musicbrainz_id=disc.id,
+            name=disc.title,
+            date=disc.year,
+            artists={CdLibrary._make_artist(ar) for ar in disc.artists},
+            images=disc.images,
+            num_discs=disc.discs,
+            num_tracks=len(disc.tracks)
+        )
+
     @staticmethod
     def _make_artist(artist_tuple):
         return Artist(
+            uri=ROOT_URI,
             musicbrainz_id=artist_tuple.id,
             name=artist_tuple.name,
             sortname=artist_tuple.sortname
+        )
+
+    @staticmethod
+    def _make_track(album, track_tuple):
+        return Track(
+            uri=ROOT_URI + str(track_tuple.number),
+            musicbrainz_id=track_tuple.id,
+            name=track_tuple.title,
+            length=track_tuple.duration,
+            track_no=track_tuple.number,
+            disc_no=track_tuple.disc_number,
+            album=album,
+            artists={CdLibrary._make_artist(ar) for ar in track_tuple.artists}
         )
 
 
