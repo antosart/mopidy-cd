@@ -117,7 +117,6 @@ class CdLibrary(backend.LibraryProvider):
             name=disc.title,
             date=disc.year,
             artists={CdLibrary._make_artist(ar) for ar in disc.artists},
-            images=disc.images,
             num_discs=disc.discs,
             num_tracks=len(disc.tracks)
         )

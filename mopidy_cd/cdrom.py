@@ -128,7 +128,7 @@ class CdRom(object):
     @staticmethod
     def _extract_tracks(discid, medium_list=()):
         def match_by_discid(medium):
-            if medium['format'].lower() != 'cd':
+            if medium.get('format', '').lower() != 'cd':
                 return False
             return any(disc['id'] == discid.id for disc in medium['disc-list'])
 
