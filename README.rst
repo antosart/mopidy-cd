@@ -37,11 +37,16 @@ Known issues
 =========
 
 - Mopidy proxy settings are ignored by the extension.
-- Search is not implemented.
 
 
 Changelog
 =========
+
+v0.5.1 (2020-03-14)
+-------------------
+
+- Fixed Mopidy 3.x compatibility issue.
+
 
 v0.5.0 (2019-02-01)
 -------------------
