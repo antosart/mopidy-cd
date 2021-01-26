@@ -27,7 +27,7 @@ setup(
         'setuptools',
         'Mopidy >= 2.0',
         'Pykka >= 1.1',
-        'musicbrainzngs == 0.6',
+        'musicbrainzngs >= 0.6',
     ],
     entry_points={
         'mopidy.ext': [
