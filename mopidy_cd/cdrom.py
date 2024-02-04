@@ -5,7 +5,10 @@ import math
 
 import musicbrainzngs
 
-from collections.abc import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping  # Backwards compatibility
 from collections import namedtuple
 from datetime import timedelta
 
