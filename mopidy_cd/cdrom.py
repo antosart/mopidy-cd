@@ -5,7 +5,8 @@ import math
 
 import musicbrainzngs
 
-from collections import Mapping, namedtuple
+from collections.abc import Mapping
+from collections import namedtuple
 from datetime import timedelta
 
 from mopidy.audio.scan import Scanner
